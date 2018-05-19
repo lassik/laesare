@@ -1,6 +1,6 @@
 #!/usr/bin/env scheme-script
 ;; -*- mode: scheme; coding: utf-8 -*- !#
-;; Copyright © 2017 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2017, 2018 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -21,21 +21,34 @@
 ;; DEALINGS IN THE SOFTWARE.
 #!r6rs
 
-(import (r6lint lib reader)
-        (r6lint tests check)
-        (rnrs (6)))
+(import
+  (rnrs (6))
+  (srfi :64 testing)
+  (laesare reader))
+
+(define-syntax check
+  (lambda (x)
+    (syntax-case x (=>)
+      ((_ expr => expect)
+       #'(test-equal expect expr)))))
 
 ;; Lexing
-(letrec ((get-all (lambda (input)
-                    (guard (con
-                            ((lexical-violation? con)
-                             '&lexical))
-                      (let ((reader (make-reader (open-string-input-port input) "<test>")))
-                        (let lp ((token* '()))
-                          (let ((token (get-token reader)))
-                            (if (eof-object? token)
-                                (reverse token*)
-                                (lp (cons token token*))))))))))
+(test-begin "lexing")
+(letrec ((get-all
+          (lambda (input . arg*)
+            (guard (con
+                    ((lexical-violation? con)
+                     ;; (display (condition-message con)) (newline)
+                     ;; (write (condition-irritants con)) (newline)
+                     '&lexical))
+              (let ((reader (make-reader (open-string-input-port input) "<test>")))
+                (reader-mode-set! reader (if (null? arg*) 'r6rs (car arg*)))
+                (let lp ((token* '()))
+                  (let ((token (get-token reader)))
+                    (if (eof-object? token)
+                        (reverse token*)
+                        (lp (cons token token*))))))))))
+
   (check (get-all "") => '())
   (check (get-all "#!/usr/bin/env scheme-script\n#f") => '((shebang 1 0 . "/usr/bin/env scheme-script") #f))
   (check (get-all " #!/usr/bin/env scheme-script\n#f") => '((whitespace . " ") (shebang 1 1 . "/usr/bin/env scheme-script") #f))
@@ -118,9 +131,19 @@
   (check (get-all "\"\\x00110000;\"") => '&lexical)
   (check (get-all "\"\\x000000001;\"") => '("\x0001;"))
   (check (get-all "\"\\xD800;\"") => '&lexical)
-  (check (get-all "\"A\nbc\"") => '("\x0041;\x000A;\x0062;\x0063;")))
+  (check (get-all "\"A\nbc\"") => '("\x0041;\x000A;\x0062;\x0063;"))
+
+  ;; Circular data
+  (check (get-all "#0=(a b c . #0#)" 'r7rs)
+         => '((label . 0) openp (identifier . a) (whitespace . " ")
+              (identifier . b) (whitespace . " ") (identifier . c)
+              (whitespace . " ") dot (whitespace . " ") (reference . 0)
+              closep)))
+
+(test-end)
 
 ;; Detect file type
+(test-begin "detect")
 (letrec ((detect (lambda (input)
                    (call-with-port (open-string-input-port input)
                      detect-scheme-file-type))))
@@ -135,19 +158,29 @@
   (check (detect "#!r6rs [library ") => 'r6rs-library)
   (check (detect "[#!r6rs library ") => 'r6rs-library)
   (check (detect "#!r6rs [import ") => 'r6rs-program)
-  (check (detect "[#!r6rs import ") => 'r6rs-program))
+  (check (detect "[#!r6rs import ") => 'r6rs-program)
+  ;; R7RS stuff.
+  (check (detect "(define-library ") => 'r7rs-library))
+(test-end)
 
 ;; Reading
+(test-begin "reading")
 (letrec ((stripped-read
           (lambda (input)
             (let ((reader (make-reader (open-string-input-port input) "<test>")))
-              (guard (_
-                      (else 'error))
+              (reader-mode-set! reader 'r6rs)
+              (guard (con
+                      (else
+                       ;; (display (condition-message con)) (newline)
+                       ;; (write (condition-irritants con)) (newline)
+                       'error))
                 (annotation-stripped (read-annotated reader)))))))
   (check (stripped-read "#!/usr/bin/env scheme-script\n#f") => '#f)
   (check (stripped-read " #!/usr/bin/env scheme-script\n#f") => 'error)
   (check (stripped-read "#f") => #f)
   (check (stripped-read "()") => '())
+  (check (stripped-read "(a . b)") => '(a . b))
+  (check (stripped-read "( . b)") => 'error)
   (check (stripped-read "#!r6rs ()") => '())
   (check (stripped-read "(#!r6rs)") => '())
   (check (stripped-read "#!\tr6rs ()") => 'error)
@@ -183,6 +216,75 @@
   (check (stripped-read "#|##||#|# x") => 'x)
   (check (stripped-read "#|#|#||#|#|# x") => 'x)
   (check (stripped-read "#|#|#| ## |#|#|# x") => 'x))
+(test-end)
 
-(check-report)
-(exit (if (check-passed? 112) 0 1))
+;; RnRS modes and the incompatibilities added in R7RS.
+(test-begin "rnrs")
+(letrec ((stripped-read
+          (lambda (mode input)
+            (let ((reader (make-reader (open-string-input-port input) "<test>")))
+              (reader-mode-set! reader mode)
+              (guard (con
+                      (else
+                       ;; (display (condition-message con)) (newline)
+                       ;; (write (condition-irritants con)) (newline)
+                       'error))
+                (annotation-stripped (read-annotated reader)))))))
+  ;; Booleans
+  (test-equal #f (stripped-read 'rnrs "#!false"))
+  (test-equal #t (stripped-read 'rnrs "#!true"))
+  (test-equal #f (stripped-read 'r7rs "#false"))
+  (test-equal #t (stripped-read 'r7rs "#true"))
+  (test-equal #f (stripped-read 'r7rs "#faLse"))
+  (test-equal #t (stripped-read 'r7rs "#trUE"))
+  (test-equal 'error (stripped-read 'r6rs "#!true"))
+  (test-equal 'error (stripped-read 'r5rs "#!true"))
+  ;; Characters
+  (test-equal #\nul (stripped-read 'r6rs "#\\nul"))
+  (test-equal #\nul (stripped-read 'r7rs "#\\null"))
+  (test-equal 'error (stripped-read 'r7rs "#\\nul"))
+  (test-equal 'error (stripped-read 'r6rs "#\\null"))
+  ;; Bytevectors
+  (test-equal #vu8() (stripped-read 'r6rs "#vu8()"))
+  (test-equal #vu8() (stripped-read 'r7rs "#u8()"))
+  (test-equal #vu8() (stripped-read 'r7rs "#U8()"))
+  (test-equal 'error (stripped-read 'r6rs "#u8()"))
+  (test-equal 'error (stripped-read 'r7rs "#vu8()")))
+(test-end)
+
+;; Shared/circular data
+(test-begin "shared")
+(letrec ((stripped-read
+          (lambda (input)
+            (let ((reader (make-reader (open-string-input-port input) "<test>")))
+              (reader-mode-set! reader 'r7rs)
+              (guard (con
+                      (else
+                       ;; (display (condition-message con)) (newline)
+                       ;; (write (condition-irritants con)) (newline)
+                       'error))
+                (read-datum reader))))))
+  (test-assert (let ((x (stripped-read "#0=(a b c . #0#)")))
+                 (equal? x (cdddr x))))
+  (test-assert (let ((x (stripped-read "#0= #(a b c #0#)")))
+                 (equal? x (vector-ref x 3))))
+  (test-assert (let ((x (stripped-read "(#0=(a) #0#)")))
+                 (equal? (car x) (cadr x))))
+  (test-assert (let ((x (stripped-read "(#0=(a) . #0#)")))
+                 (equal? (car x) (cdr x))))
+  (test-assert (let ((x (stripped-read "(#0# . #0=(a))")))
+                 (equal? (car x) (cdr x)))) ;not required by r7rs
+  (test-equal '((a) (a) (a)) (stripped-read "(#0=(a) #0# #0#)"))
+  (test-equal 'error (stripped-read "#0= #0#"))
+  (test-equal 'error (stripped-read "#0= #1#"))
+  (test-equal 'error (stripped-read "#0= (#1#)"))
+  (test-equal 'error (stripped-read "(#0=a #0=a)")) ;duplicate label
+  (test-equal 'error (stripped-read "#u8(#0=1 #0#)")) ;not expected to work
+  (test-equal '(1 2 3) (stripped-read "#0=(1 2 3 #;#0#)"))
+  (test-equal '#(1 2 3) (stripped-read "#0=#(1 2 3 #;#0#)"))
+  (test-equal '#(1 2 3) (stripped-read "#0=#(1 2 3 #;#1#)"))
+  (test-equal #vu8(0) (stripped-read "#0= #u8(0)"))
+  (test-equal #f (stripped-read "#0= #false")))
+(test-end)
+
+(exit (if (zero? (test-runner-fail-count (test-runner-get))) 0 1))
