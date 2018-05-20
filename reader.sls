@@ -338,9 +338,10 @@
                              ((#\b) #\backspace)
                              ((#\t) #\tab)
                              ((#\n) #\linefeed)
-                             ((#\v) #\vtab)
-                             ((#\f) #\page)
+                             ((#\v) (assert-mode p "\\v" '(rnrs r6rs)) #\vtab)
+                             ((#\f) (assert-mode p "\\f" '(rnrs r6rs)) #\page)
                              ((#\r) #\return)
+                             ((#\|) (assert-mode p "\\|" '(rnrs r7rs)) #\|)
                              ((#\x) (get-inline-hex-escape p))
                              (else
                               (reader-warning p "Invalid escape in string" c)

@@ -249,7 +249,14 @@
   (test-equal #vu8() (stripped-read 'r7rs "#u8()"))
   (test-equal #vu8() (stripped-read 'r7rs "#U8()"))
   (test-equal 'error (stripped-read 'r6rs "#u8()"))
-  (test-equal 'error (stripped-read 'r7rs "#vu8()")))
+  (test-equal 'error (stripped-read 'r7rs "#vu8()"))
+  ;; Strings
+  (test-equal "|" (stripped-read 'r7rs " \"\\|\" "))
+  (test-equal 'error (stripped-read 'r7rs " \"\\v\" "))
+  (test-equal 'error (stripped-read 'r7rs " \"\\f\" "))
+  (test-equal "\v" (stripped-read 'r6rs " \"\\v\" "))
+  (test-equal "\f" (stripped-read 'r6rs " \"\\f\" "))
+  )
 (test-end)
 
 ;; Shared/circular data
