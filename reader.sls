@@ -236,38 +236,50 @@
              (reader-warning p "Invalid inline hex escape" c)
              #\xFFFD)))))
 
-(define (get-identifier p initial-chars)
-  (let lp ((chars initial-chars))
+(define (get-identifier p initial-char pipe-quoted?)
+  (let lp ((chars (if initial-char (list initial-char) '())))
     (let ((c (lookahead-char p)))
-      (cond ((char-delimiter? c)
-             (let ((id (list->string (reverse chars))))
-               (if (reader-fold-case p)
-                   (values 'identifier (string->symbol (string-foldcase id)))
-                   (values 'identifier (string->symbol id)))))
-            ((or (char-ci<=? #\a c #\Z)
-                 (char<=? #\0 c #\9)
-                 (memv c '(#\! #\$ #\% #\& #\* #\/ #\: #\< #\= #\> #\? #\^ #\_ #\~
-                           #\+ #\- #\. #\@))
-                 (and (> (char->integer c) 127)
-                      (memq (char-general-category c)
-                            '(Lu Ll Lt Lm Lo Mn Nl No Pd Pc Po Sc Sm Sk So Co
-                                 Nd Mc Me))))
-             (lp (cons (get-char p) chars)))
-            ((char=? c #\\)           ;\xUUUU;
-             (get-char p)             ;consume #\\
-             (let ((c (get-char p)))  ;should be #\x
-               (cond ((eqv? c #\x)
-                      (lp (cons (get-inline-hex-escape p) chars)))
-                     (else
-                      (cond ((eof-object? c)
-                             (eof-warning p))
-                            (else
-                             (reader-warning p "Invalid character following \\")))
-                      (lp chars)))))
-            (else
-             (reader-warning p "Invalid character in identifier" c)
-             (get-char p)
-             (lp chars))))))
+      (cond
+        ((and (char? c)
+              (or (char-ci<=? #\a c #\Z)
+                  (char<=? #\0 c #\9)
+                  (memv c '(#\! #\$ #\% #\& #\* #\/ #\: #\< #\= #\> #\? #\^ #\_ #\~
+                            #\+ #\- #\. #\@))
+                  (and (> (char->integer c) 127)
+                       (memq (char-general-category c) ;XXX: could be done faster
+                             '(Lu Ll Lt Lm Lo Mn Nl No Pd Pc Po Sc Sm Sk So Co Nd Mc Me)))))
+         (lp (cons (get-char p) chars)))
+        ((or (char-delimiter? c) (and pipe-quoted? (eqv? c #\|)))
+         (when (eqv? c #\|)
+           (get-char p))
+         (let ((id (list->string (reverse chars))))
+           (if (reader-fold-case p)
+               (values 'identifier (string->symbol (string-foldcase id)))
+               (values 'identifier (string->symbol id)))))
+        ((char=? c #\\)           ;\xUUUU;
+         (get-char p)             ;consume #\\
+         (let ((c (get-char p)))  ;should be #\x
+           (cond ((eqv? c #\x)
+                  (lp (cons (get-inline-hex-escape p) chars)))
+                 ((and pipe-quoted?
+                       (assv c '((#\" . #\")
+                                 (#\\ . #\\)
+                                 (#\a . #\alarm)
+                                 (#\b . #\backspace)
+                                 (#\t . #\tab)
+                                 (#\n . #\linefeed)
+                                 (#\r . #\return)
+                                 (#\| . #\|))))
+                  => (lambda (c) (lp (cons (cdr c) chars))))
+                 (else
+                  (if (eof-object? c)
+                      (eof-warning p)
+                      (reader-warning p "Invalid character following \\"))
+                  (lp chars)))))
+        (else
+         (reader-warning p "Invalid character in identifier" c)
+         (get-char p)
+         (lp chars))))))
 
 ;; Get a number from the reader.
 (define (get-number p initial-chars)
@@ -280,6 +292,8 @@
                (cond ((string->number str) =>
                       (lambda (num)
                         (values 'value num)))
+                     ((memv (reader-mode p) '(rnrs r7rs))
+                      (values 'identifier (string->symbol str)))
                      (else
                       (reader-warning p "Invalid number syntax" str)
                       (values 'value 0)))))
@@ -605,9 +619,9 @@
        (get-number p (list c)))
       ((memv c '(#\- #\+))            ;peculiar identifier
        (cond ((and (char=? c #\-) (eqv? #\> (lookahead-char p))) ;->
-              (get-identifier p (list c)))
+              (get-identifier p c #f))
              ((char-delimiter? (lookahead-char p))
-              (values 'identifier (string->symbol (string c))))
+              (values 'identifier (if (eqv? c #\-) '- '+)))
              (else
               (get-number p (list c)))))
       ((char=? c #\.)                 ;peculiar identifier
@@ -624,14 +638,15 @@
               (get-number p (list c)))))
       ((or (char-ci<=? #\a c #\Z) ;<constituent> and <special initial>
            (memv c '(#\! #\$ #\% #\& #\* #\/ #\: #\< #\= #\> #\? #\^ #\_ #\~))
+           (and (memv (reader-mode p) '(rnrs r7rs)) (eqv? c #\@))
            (and (> (char->integer c) 127)
                 (memq (char-general-category c)
                       '(Lu Ll Lt Lm Lo Mn Nl No Pd Pc Po Sc Sm Sk So Co))))
-       (get-identifier p (list c)))
+       (get-identifier p c #f))
       ((char=? c #\\)                 ;<inline hex escape>
        (let ((c (get-char p)))
          (cond ((eqv? c #\x)
-                (get-identifier p (list (get-inline-hex-escape p))))
+                (get-identifier p (get-inline-hex-escape p) #f))
                (else
                 (cond ((eof-object? c)
                        (eof-warning p))
@@ -652,8 +667,11 @@
              (get-char p)
              (values 'abbrev 'unquote-splicing))
             (else (values 'abbrev 'unquote))))
+         ((#\|)
+          (assert-mode p "Quoted identifiers" '(rnrs r7rs))
+          (get-identifier p #f 'pipe))
          (else
-          (reader-warning p "Invalid character" c)
+          (reader-warning p "Invalid leading character" c)
           (get-token p)))))))
 
 ;;; Datum reader
@@ -760,7 +778,7 @@
       ((openp)
        (get-compound-datum p src 'closep 'list labels))
       ((openb)
-       (assert-mode p "square brackets" '(rnrs r6rs))
+       (assert-mode p "Square brackets" '(rnrs r6rs))
        (get-compound-datum p src 'closeb 'list labels))
       ((vector)
        (get-compound-datum p src 'closep 'vector labels))

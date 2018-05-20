@@ -228,7 +228,7 @@
                        ;; (display (condition-message con)) (newline)
                        ;; (write (condition-irritants con)) (newline)
                        'error))
-                (annotation-stripped (read-annotated reader)))))))
+                (read-datum reader))))))
   ;; Booleans
   (test-equal #f (stripped-read 'rnrs "#!false"))
   (test-equal #t (stripped-read 'rnrs "#!true"))
@@ -255,7 +255,16 @@
   (test-equal 'error (stripped-read 'r7rs " \"\\f\" "))
   (test-equal "\v" (stripped-read 'r6rs " \"\\v\" "))
   (test-equal "\f" (stripped-read 'r6rs " \"\\f\" "))
-  )
+  ;; Symbols
+  (test-equal 'foo (stripped-read 'r7rs "|foo|"))
+  (test-equal (string->symbol "a|b") (stripped-read 'r7rs "|a\\|b|"))
+  (test-equal 'Hello (stripped-read 'r7rs "|H\\x65;llo|"))
+  (test-equal 'λ (stripped-read 'r7rs "|\\x3BB;|"))
+  (test-equal '\x9;\x9; (stripped-read 'r7rs "|\\t\\t|"))
+  (test-equal '\x9;\x9; (stripped-read 'r7rs "|\\x9;\\x9;|"))
+  (test-equal (string->symbol "") (stripped-read 'r7rs "||"))
+  (test-equal (string->symbol "+soup+") (stripped-read 'r7rs "+soup+"))
+  (test-equal (string->symbol "@") (stripped-read 'r7rs "@")))
 (test-end)
 
 ;; Shared/circular data
