@@ -12,7 +12,6 @@ matrix:
   allow_failures:
     - env: SCHEME="Guile_2.2"
     - env: SCHEME="SagittariusScheme"
-    - env: SCHEME="VicareScheme"
     - env: SCHEME="Ypsilon"
 
 sudo: false

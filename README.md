@@ -1,5 +1,7 @@
 # (laesare reader)
 
+[![Build Status](https://travis-ci.org/weinholt/laesare.svg?branch=master)](https://travis-ci.org/weinholt/laesare)
+
 This is an R6RS Scheme library that provides a reader with some extra
 features not found in the standard `read` procedure:
 
