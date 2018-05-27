@@ -236,6 +236,8 @@
   (test-equal #t (stripped-read 'r7rs "#true"))
   (test-equal #f (stripped-read 'r7rs "#faLse"))
   (test-equal #t (stripped-read 'r7rs "#trUE"))
+  (test-equal #f (stripped-read 'r7rs "#f"))
+  (test-equal #t (stripped-read 'r7rs "#t"))
   (test-equal 'error (stripped-read 'r6rs "#!true"))
   (test-equal 'error (stripped-read 'r5rs "#!true"))
   ;; Characters
