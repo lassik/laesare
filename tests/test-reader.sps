@@ -272,7 +272,13 @@
   (test-equal '(foo bar) (stripped-read 'r7rs "(foo|bar|)"))
   (test-equal 'error (stripped-read 'r6rs "(foo|bar|)"))
   (test-equal `(foo ,(string->symbol ".#") (bar)) (stripped-read 'r7rs "(foo .#(bar))"))
-  (test-equal '(foo . #(bar)) (stripped-read 'r6rs "(foo .#(bar))")))
+  (test-equal '(foo . #(bar)) (stripped-read 'r6rs "(foo .#(bar))"))
+  ;; Numbers (not)
+  (test-equal 'error (stripped-read 'r7rs "0x1"))
+  (test-equal 0 (stripped-read 'r7rs "+0"))
+  ;; (test-equal 'error (stripped-read 'r7rs "+."))
+  (test-equal 0.0 (stripped-read 'r7rs "+.0"))
+  )
 (test-end)
 
 ;; Shared/circular data

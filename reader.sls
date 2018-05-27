@@ -253,9 +253,11 @@
                             #\+ #\- #\. #\@))
                   (and (> (char->integer c) 127)
                        (memq (char-general-category c) ;XXX: could be done faster
-                             '(Lu Ll Lt Lm Lo Mn Nl No Pd Pc Po Sc Sm Sk So Co Nd Mc Me)))))
+                             '(Lu Ll Lt Lm Lo Mn Nl No Pd Pc Po Sc Sm Sk So Co Nd Mc Me)))
+                  (and (memv (reader-mode p) '(rnrs r7rs))
+                       (memv c '(#\x200C #\x200D)))))
          (lp (cons (get-char p) chars)))
-        ((and pipe-quoted? (not (memv c '(#\| #\\))))
+        ((and pipe-quoted? (char? c) (not (memv c '(#\| #\\))))
          (lp (cons (get-char p) chars)))
         ((or (char-delimiter? p c) (and pipe-quoted? (eqv? c #\|)))
          (when (eqv? c #\|)
@@ -300,11 +302,14 @@
                (cond ((string->number str) =>
                       (lambda (num)
                         (values 'value num)))
-                     ((memv (reader-mode p) '(rnrs r7rs))
+                     ((and (memq (reader-mode p) '(rnrs r7rs))
+                           ;; TODO: This is incomplete.
+                           (not (and (pair? initial-chars)
+                                     (char<=? #\0 (car initial-chars) #\9))))
                       (values 'identifier (string->symbol str)))
                      (else
                       (reader-warning p "Invalid number syntax" str)
-                      (values 'value 0)))))
+                      (values 'identifier (string->symbol str))))))
             (else
              (lp (cons (get-char p) chars)))))))
 
@@ -647,7 +652,8 @@
               (get-number p (list c)))))
       ((or (char-ci<=? #\a c #\Z) ;<constituent> and <special initial>
            (memv c '(#\! #\$ #\% #\& #\* #\/ #\: #\< #\= #\> #\? #\^ #\_ #\~))
-           (and (memv (reader-mode p) '(rnrs r7rs)) (eqv? c #\@))
+           (and (memv (reader-mode p) '(rnrs r7rs))
+                (or (eqv? c #\@) (memv c '(#\x200C #\x200D))))
            (and (> (char->integer c) 127)
                 (memq (char-general-category c)
                       '(Lu Ll Lt Lm Lo Mn Nl No Pd Pc Po Sc Sm Sk So Co))))
