@@ -249,6 +249,8 @@
                        (memq (char-general-category c) ;XXX: could be done faster
                              '(Lu Ll Lt Lm Lo Mn Nl No Pd Pc Po Sc Sm Sk So Co Nd Mc Me)))))
          (lp (cons (get-char p) chars)))
+        ((and pipe-quoted? (not (memv c '(#\| #\\))))
+         (lp (cons (get-char p) chars)))
         ((or (char-delimiter? c) (and pipe-quoted? (eqv? c #\|)))
          (when (eqv? c #\|)
            (get-char p))
@@ -625,15 +627,16 @@
              (else
               (get-number p (list c)))))
       ((char=? c #\.)                 ;peculiar identifier
-       (cond ((eqv? #\. (lookahead-char p))
+       (cond ((char-delimiter? (lookahead-char p))
+              (values 'dot #f))
+             ((and (eq? (reader-mode p) 'r6rs)
+                   (eqv? #\. (lookahead-char p)))
               (get-char p)            ;consume second dot
               (unless (eqv? #\. (get-char p)) ;consume third dot
                 (reader-warning p "Expected the ... identifier"))
               (unless (char-delimiter? (lookahead-char p))
                 (reader-warning p "Expected the ... identifier"))
               (values 'identifier '...))
-             ((char-delimiter? (lookahead-char p))
-              (values 'dot #f))
              (else
               (get-number p (list c)))))
       ((or (char-ci<=? #\a c #\Z) ;<constituent> and <special initial>

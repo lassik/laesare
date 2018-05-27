@@ -50,8 +50,8 @@
                         (lp (cons (cons type token) ret))))))))))
 
   (check (get-all "") => '())
-  (check (get-all "#!/usr/bin/env scheme-script\n#f") => '((shebang 1 0 "/usr/bin/env scheme-script") (value .#f)))
-  (check (get-all " #!/usr/bin/env scheme-script\n#f") => '((whitespace . " ") (shebang 1 1 "/usr/bin/env scheme-script") (value .#f)))
+  (check (get-all "#!/usr/bin/env scheme-script\n#f") => '((shebang 1 0 "/usr/bin/env scheme-script") (value . #f)))
+  (check (get-all " #!/usr/bin/env scheme-script\n#f") => '((whitespace . " ") (shebang 1 1 "/usr/bin/env scheme-script") (value . #f)))
   (check (get-all " #f ") => '((whitespace . " ") (value . #f) (whitespace . " ")))
   (check (get-all "#!r6rs #f") => '((directive . r6rs) (whitespace . " ") (value . #f)))
 
@@ -260,6 +260,7 @@
   ;; Symbols
   (test-equal 'foo (stripped-read 'r7rs "|foo|"))
   (test-equal (string->symbol "a|b") (stripped-read 'r7rs "|a\\|b|"))
+  (test-equal (string->symbol "a b") (stripped-read 'r7rs "|a b|"))
   (test-equal 'Hello (stripped-read 'r7rs "|H\\x65;llo|"))
   (test-equal 'λ (stripped-read 'r7rs "|\\x3BB;|"))
   (test-equal '\x9;\x9; (stripped-read 'r7rs "|\\t\\t|"))
