@@ -267,7 +267,12 @@
   (test-equal '\x9;\x9; (stripped-read 'r7rs "|\\x9;\\x9;|"))
   (test-equal (string->symbol "") (stripped-read 'r7rs "||"))
   (test-equal (string->symbol "+soup+") (stripped-read 'r7rs "+soup+"))
-  (test-equal (string->symbol "@") (stripped-read 'r7rs "@")))
+  (test-equal (string->symbol "@") (stripped-read 'r7rs "@"))
+  ;; Delimiters
+  (test-equal '(foo bar) (stripped-read 'r7rs "(foo|bar|)"))
+  (test-equal 'error (stripped-read 'r6rs "(foo|bar|)"))
+  (test-equal `(foo ,(string->symbol ".#") (bar)) (stripped-read 'r7rs "(foo .#(bar))"))
+  (test-equal '(foo . #(bar)) (stripped-read 'r6rs "(foo .#(bar))")))
 (test-end)
 
 ;; Shared/circular data

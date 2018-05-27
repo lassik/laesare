@@ -190,11 +190,17 @@
   (and (fx<=? 0 sv #x10FFFF)
        (not (fx<=? #xD800 sv #xDFFF))))
 
-(define (char-delimiter? c)
+(define (char-delimiter? reader c)
   ;; Treats the eof-object as a delimiter
   (or (eof-object? c)
-      (memv c '(#\( #\) #\[ #\] #\" #\; #\#))
-      (char-whitespace? c)))
+      (char-whitespace? c)
+      (case (reader-mode reader)
+        ((r6rs)
+         (memv c '(#\( #\) #\[ #\] #\" #\; #\#)))
+        ((r7rs)
+         (memv c '(#\( #\) #\" #\; #\|)))
+        (else
+         (memv c '(#\( #\) #\[ #\] #\" #\; #\# #\|))))))
 
 ;; Get a line from the reader.
 (define (get-line reader)
@@ -251,7 +257,7 @@
          (lp (cons (get-char p) chars)))
         ((and pipe-quoted? (not (memv c '(#\| #\\))))
          (lp (cons (get-char p) chars)))
-        ((or (char-delimiter? c) (and pipe-quoted? (eqv? c #\|)))
+        ((or (char-delimiter? p c) (and pipe-quoted? (eqv? c #\|)))
          (when (eqv? c #\|)
            (get-char p))
          (let ((id (list->string (reverse chars))))
@@ -287,7 +293,7 @@
 (define (get-number p initial-chars)
   (let lp ((chars initial-chars))
     (let ((c (lookahead-char p)))
-      (cond ((and (not (eqv? c #\#)) (char-delimiter? c))
+      (cond ((and (not (eqv? c #\#)) (char-delimiter? p c))
              ;; TODO: some standard numbers are not supported
              ;; everywhere, should use a number lexer.
              (let ((str (list->string (reverse chars))))
@@ -517,30 +523,30 @@
            ((#\b #\B #\o #\O #\d #\D #\x #\X #\i #\I #\e #\E)
             (get-number p (list c #\#)))
            ((#\t #\T)
-            (unless (char-delimiter? (lookahead-char p))
+            (unless (char-delimiter? p (lookahead-char p))
               (if (memq (reader-mode p) '(rnrs r7rs))
                   (let* ((c1 (and (memv (lookahead-char p) '(#\r #\R)) (get-char p)))
                          (c2 (and c1 (memv (lookahead-char p) '(#\u #\U)) (get-char p)))
                          (c3 (and c2 (memv (lookahead-char p) '(#\e #\E)) (get-char p))))
-                    (unless (and c1 c2 c3 (char-delimiter? (lookahead-char p)))
+                    (unless (and c1 c2 c3 (char-delimiter? p (lookahead-char p)))
                       (reader-warning p "Expected #true")))
                   (reader-warning p "A delimiter is expected after #t")))
             (values 'value #t))
            ((#\f #\F)
-            (unless (char-delimiter? (lookahead-char p))
+            (unless (char-delimiter? p (lookahead-char p))
               (if (memq (reader-mode p) '(rnrs r7rs))
                   (let* ((c1 (and (memv (lookahead-char p) '(#\a #\A)) (get-char p)))
                          (c2 (and c1 (memv (lookahead-char p) '(#\l #\L)) (get-char p)))
                          (c3 (and c2 (memv (lookahead-char p) '(#\s #\S)) (get-char p)))
                          (c4 (and c3 (memv (lookahead-char p) '(#\e #\E)) (get-char p))))
-                    (unless (and c1 c2 c3 c4 (char-delimiter? (lookahead-char p)))
+                    (unless (and c1 c2 c3 c4 (char-delimiter? p (lookahead-char p)))
                       (reader-warning p "Expected #false" c1 c2 c3 c4)))
                   (reader-warning p "A delimiter is expected after #f")))
             (values 'value #f))
            ((#\\)
             (let lp ((char* '()))
               (let ((c (lookahead-char p)))
-                (cond ((and (pair? char*) (char-delimiter? c))
+                (cond ((and (pair? char*) (char-delimiter? p c))
                        (let ((char* (reverse char*)))
                          (cond ((null? char*)
                                 (reader-warning p "Empty character name")
@@ -622,19 +628,19 @@
       ((memv c '(#\- #\+))            ;peculiar identifier
        (cond ((and (char=? c #\-) (eqv? #\> (lookahead-char p))) ;->
               (get-identifier p c #f))
-             ((char-delimiter? (lookahead-char p))
+             ((char-delimiter? p (lookahead-char p))
               (values 'identifier (if (eqv? c #\-) '- '+)))
              (else
               (get-number p (list c)))))
       ((char=? c #\.)                 ;peculiar identifier
-       (cond ((char-delimiter? (lookahead-char p))
+       (cond ((char-delimiter? p (lookahead-char p))
               (values 'dot #f))
              ((and (eq? (reader-mode p) 'r6rs)
                    (eqv? #\. (lookahead-char p)))
               (get-char p)            ;consume second dot
               (unless (eqv? #\. (get-char p)) ;consume third dot
                 (reader-warning p "Expected the ... identifier"))
-              (unless (char-delimiter? (lookahead-char p))
+              (unless (char-delimiter? p (lookahead-char p))
                 (reader-warning p "Expected the ... identifier"))
               (values 'identifier '...))
              (else
