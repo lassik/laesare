@@ -10,7 +10,6 @@ env:
 
 matrix:
   allow_failures:
-    - env: SCHEME="Guile_2.2"
     - env: SCHEME="SagittariusScheme"
     - env: SCHEME="Ypsilon"
 
