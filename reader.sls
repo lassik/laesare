@@ -100,7 +100,8 @@
           (mutable fold-case)         ;boolean
           (mutable mode)              ;a symbol: rnrs, r5rs, r6rs, r7rs
           (mutable tolerant?))        ;tolerant to errors?
-  (sealed #t) (opaque #f) (nongenerative)
+  (sealed #t) (opaque #f)
+  (nongenerative reader-v0-eec5b78f-a766-4be4-9cd0-fbb52ec572dc)
   (protocol
    (lambda (p)
      (lambda (port filename)
@@ -113,7 +114,8 @@
 ;; As wanted by psyntax
 (define-record-type annotation
   (fields expression source stripped)
-  (sealed #t) (opaque #f) (nongenerative))
+  (sealed #t) (opaque #f)
+  (nongenerative annotation-v0-dc9637b3-85e8-4599-9fe9-151508e9c850))
 
 (define-condition-type &source-information &condition
                        make-source-condition source-condition?
