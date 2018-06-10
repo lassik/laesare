@@ -33,6 +33,7 @@
     detect-scheme-file-type
     make-reader reader-warning
     reader-mode reader-mode-set!
+    reader-fold-case? reader-fold-case?-set!
     reader-tolerant? reader-tolerant?-set!
     reader-line reader-column
     reader-saved-line reader-saved-column
@@ -97,9 +98,9 @@
   (fields port filename
           (mutable line) (mutable column)
           (mutable saved-line) (mutable saved-column)
-          (mutable fold-case)         ;boolean
-          (mutable mode)              ;a symbol: rnrs, r5rs, r6rs, r7rs
-          (mutable tolerant?))        ;tolerant to errors?
+          (mutable fold-case?)       ;boolean
+          (mutable mode)             ;a symbol: rnrs, r5rs, r6rs, r7rs
+          (mutable tolerant?))       ;tolerant to errors?
   (sealed #t) (opaque #f)
   (nongenerative reader-v0-eec5b78f-a766-4be4-9cd0-fbb52ec572dc)
   (protocol
@@ -265,7 +266,7 @@
          (when (eqv? c #\|)
            (get-char p))
          (let ((id (list->string (reverse chars))))
-           (if (reader-fold-case p)
+           (if (reader-fold-case? p)
                (values 'identifier (string->symbol (string-foldcase id)))
                (values 'identifier (string->symbol id)))))
         ((char=? c #\\)           ;\xUUUU;
@@ -507,10 +508,10 @@
                         (reader-mode-set! p 'r6rs))
                        ((fold-case)     ;r6rs-app.pdf
                         (assert-mode p "#!fold-case" '(rnrs r6rs r7rs))
-                        (reader-fold-case-set! p #t))
+                        (reader-fold-case?-set! p #t))
                        ((no-fold-case)  ;r6rs-app.pdf
                         (assert-mode p "#!no-fold-case" '(rnrs r6rs r7rs))
-                        (reader-fold-case-set! p #f))
+                        (reader-fold-case?-set! p #f))
                        ((r7rs)          ;oddly missing in r7rs
                         (assert-mode p "#!r7rs" '(rnrs))
                         (reader-mode-set! p 'r7rs))
@@ -592,7 +593,7 @@
                                                     ("delete" #\delete r6rs r7rs))))
                                   (cond
                                     ((or (assoc char-name char-names)
-                                         (and (reader-fold-case p)
+                                         (and (reader-fold-case? p)
                                               (assoc (string-foldcase char-name)
                                                      char-names)))
                                      => (lambda (char-data)

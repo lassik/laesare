@@ -56,6 +56,18 @@ The default mode is `rnrs`.
 
 Changes the *reader* mode to *mode*. See `reader-mode`.
 
+### (reader-fold-case? reader)
+
+Returns `#t` if the reader is in *case folding* mode. A case folding
+reader will do `string-foldcase` on identifiers.
+
+This mode will automatically change if the reader encounters
+`#!fold-case` or `#!no-fold-case`.
+
+### (reader-fold-case?-set! reader bool)
+
+Sets the case folding mode of the *reader*.
+
 ### (reader-tolerant? reader)
 
 Returns `#t` if the reader is in *tolerant* mode. A tolerant reader

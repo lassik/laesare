@@ -313,8 +313,35 @@
   (test-equal '#(1 2 3) (stripped-read "#0=#(1 2 3 #;#0#)"))
   (test-equal '#(1 2 3) (stripped-read "#0=#(1 2 3 #;#1#)"))
   (test-equal #vu8(0) (stripped-read "#0= #u8(0)"))
-  (test-equal #f (stripped-read "#0= #false"))
-  )
+  (test-equal #f (stripped-read "#0= #false")))
+(test-end)
+
+;; Case folding
+(test-begin "foldcase")
+(letrec ((stripped-read
+          (lambda (fold? input)
+            (let ((reader (make-reader (open-string-input-port input) "<test>")))
+              (reader-fold-case?-set! reader fold?)
+              (read-datum reader)))))
+  (test-equal 'foo (stripped-read #f "foo"))
+  (test-equal 'foo (stripped-read #t "foo"))
+  (test-equal 'FOO (stripped-read #f "FOO"))
+  (test-equal 'foo (stripped-read #t "FOO"))
+  (test-equal 'foo (stripped-read #f "#!fold-case foo"))
+  (test-equal 'foo (stripped-read #t "#!fold-case foo"))
+  (test-equal 'FOO (stripped-read #f "#!no-fold-case FOO"))
+  (test-equal 'FOO (stripped-read #t "#!no-fold-case FOO"))
+  (test-equal #t
+              (let ((reader (make-reader (open-string-input-port "#!fold-case FOO")
+                                         "<test>")))
+                (read-datum reader)
+                (reader-fold-case? reader)))
+  (test-equal #f
+              (let ((reader (make-reader (open-string-input-port "#!no-fold-case FOO")
+                                         "<test>")))
+                (reader-fold-case?-set! reader #t)
+                (read-datum reader)
+                (reader-fold-case? reader))))
 (test-end)
 
 ;; Reading files
