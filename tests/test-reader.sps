@@ -141,6 +141,36 @@
               (closep . #f))))
 (test-end)
 
+(test-begin "tolerant-lexing")
+(letrec ((get-all
+          (lambda (input . arg*)
+            (with-exception-handler
+              (lambda (con)
+                (unless (warning? con)
+                  (raise con)))
+              (lambda ()
+                (let ((reader (make-reader (open-string-input-port input) "<test>")))
+                  (reader-tolerant?-set! reader #t)
+                  (reader-mode-set! reader (if (null? arg*) 'r6rs (car arg*)))
+                  (let lp ((ret '()))
+                    (let-values (((type token) (get-token reader)))
+                      (if (eof-object? token)
+                          (reverse ret)
+                          (lp (cons (cons type token) ret)))))))))))
+  (check (get-all "\n#!/usr/bin/env scheme-script\n#f") =>
+         '((whitespace . "\n")
+           (identifier . /usr/bin/env)
+           (whitespace . " ")
+           (identifier . scheme-script)
+           (whitespace . "\n")
+           (value . #f)))
+  (check (get-all ";;\n#! comment !#\n foo" 'rnrs) =>
+         '((comment . ";\n")
+           (comment . "comment ")
+           (whitespace . "\n ")
+           (identifier . foo))))
+(test-end)
+
 ;; Detect file type
 (test-begin "detect")
 (letrec ((detect (lambda (input)
