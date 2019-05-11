@@ -16,7 +16,7 @@ features not found in the standard `read` procedure:
 ## API
 
 ```Scheme
-(import (läsare reader))
+(import (laesare reader))
 ```
 
 ### (make-reader port filename)
