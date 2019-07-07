@@ -119,6 +119,7 @@
             "(#1=foo #1#)")
 (test-end)
 
+(test-begin "write-file")
 (define (tokenize-file filename)
   (call-with-input-file filename
     (lambda (p)
@@ -143,5 +144,6 @@
                  (display (tokens->string 'r6rs (tokenize-file "reader.sls")) p))))
             (read-string
              (get-file "reader.sls")))
+(test-end)
 
 (exit (if (zero? (test-runner-fail-count (test-runner-get))) 0 1))

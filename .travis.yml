@@ -8,11 +8,6 @@ env:
     - SCHEME="VicareScheme"
     - SCHEME="Ypsilon"
 
-matrix:
-  allow_failures:
-    - env: SCHEME="SagittariusScheme"
-    - env: SCHEME="Ypsilon"
-
 sudo: false
 dist: trusty
 
