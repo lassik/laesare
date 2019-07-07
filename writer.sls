@@ -98,7 +98,7 @@
        (case token
          ((r6rs) (writer-mode-set! writer 'r6rs))
          ((r7rs) (writer-mode-set! writer 'r7rs))
-         (else #f)))
+         (else (values))))
 
       ((openb)
        (case (writer-mode writer)
