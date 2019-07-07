@@ -11,5 +11,5 @@ with some extra features not found in the standard `read` procedure:"
                "* Lexer that returns source code tokens, including whitespace.")
   (authors "Göran Weinholt <goran@weinholt.se>")
   (license "MIT")
-  (depends/dev ("chez-srfi" "*"))
+  (depends/dev ("chez-srfi" ">=0.0.0-akku"))
 )
