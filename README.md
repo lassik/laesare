@@ -13,7 +13,7 @@ features not found in the standard `read` procedure:
 
 *Läsare* means *reader* in the Swedish language.
 
-## API
+## Reader API
 
 ```Scheme
 (import (laesare reader))
@@ -23,6 +23,10 @@ features not found in the standard `read` procedure:
 
 Return a new reader object for the textual input *port* associated
 with *filename* (which is used in annotation objects).
+
+### (reader? obj)
+
+True if *obj* is a reader object.
 
 ### (get-token reader)
 
@@ -160,7 +164,46 @@ peculiarities are:
 
 In other cases the type is `unknown`.
 
+## Writer API
+
+```Scheme
+(import (laesare writer))
+```
+
+### (make-writer port filename)
+
+Returns a new writer object for the given textual output port.
+
+### (writer? obj)
+
+True if *obj* is a writer object.
+
+### (put-token writer type token)
+
+Format a token and write it to the writer. The exact format depends on
+the writer mode. Any data returned by `get-token` can be written.
+
+### (writer-port writer)
+
+Returns the textual output port of the writer.
+
+### (writer-filename writer)
+
+Returns the filename associated with the writer object.
+
+### (writer-mode writer)
+
+Returns the mode associated with the writer. These are the same
+symbols as `reader-mode`.
+
+### (writer-mode-set! writer mode)
+
+Change the mode of the writer. The mode is also changed when an
+`#!r6rs` or `#!r7rs` directive is written with `put-token`.
+
 # Restrictions, bugs
 
 Some R6RS syntax may slip through in the R7RS mode and some R7RS
-syntax is not yet implemented. Please report bugs in GitHub issues.
+syntax is not yet implemented. Datum comments, `#;xyz`, do not
+preserve the whitespace in the comment. Please report bugs in GitHub
+issues.
