@@ -4,4 +4,4 @@
 (projects
   ((name "chez-srfi")
     (location (git "https://github.com/arcfide/chez-srfi"))
-    (revision "daf5ebd67ef36fd2388d6a62e278ba8d04b11abf")))
+    (revision "2c3ed8818884b7c96de32360939bd43a0159b4a9")))
