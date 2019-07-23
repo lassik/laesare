@@ -56,6 +56,11 @@ there).
 
 The default mode is `rnrs`.
 
+### (reader-mode reader)
+
+The port associated with the reader. You may manipulate the port
+(reading, setting the position, etc) as necessary.
+
 ### (reader-mode-set! reader mode)
 
 Changes the *reader* mode to *mode*. See `reader-mode`.
