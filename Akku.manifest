@@ -1,10 +1,10 @@
 #!r6rs ; -*- mode: scheme; coding: utf-8 -*-
 (import (akku format manifest))
 
-(akku-package ("laesare" "1.0.0-alpha.1")
+(akku-package ("laesare" "1.0.0")
   (synopsis "Scheme lexer and reader")
-  (description "This is an R6RS Scheme library that provides a reader
-with some extra features not found in the standard `read` procedure:"
+  (description "This provides a reader with some extra features not
+found in the standard read procedure:"
                "* Source annotations."
                "* Tolerant mode that continues on errors."
                "* Compatible mode with support for other RnRS standards."
