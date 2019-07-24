@@ -69,8 +69,7 @@
        (write token p))
       ((value)
        (cond
-         ((and (eq? (writer-mode writer) 'r7rs)
-               (assq token r7rs-char-names))
+         ((and (eq? (writer-mode writer) 'r7rs) (assv token r7rs-char-names))
           => (lambda (name)
                (cond ((cdr name)
                       (put-string p "#\\")
