@@ -1,6 +1,6 @@
 #!/usr/bin/env scheme-script
 ;; -*- mode: scheme; coding: utf-8 -*- !#
-;; Copyright © 2017, 2018 Göran Weinholt <goran@weinholt.se>
+;; Copyright © 2017, 2018, 2019 Göran Weinholt <goran@weinholt.se>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a
 ;; copy of this software and associated documentation files (the "Software"),
@@ -376,12 +376,17 @@
 
 ;; Reading files
 (test-begin "read-files")
-(let* ((p (open-input-file "reader.sls"))
-       (r (make-reader p "reader.sls")))
-  (let ((datum (read-datum r)))
-    (set-port-position! p 0)
-    (let ((expect (read p)))
-      (test-equal expect datum))))
+(let ((p (open-input-file "reader.sls")))
+  (cond ((and (port-has-set-port-position!? p)
+              (port-has-port-position? p))
+         (let ((pos0 (port-position p))
+               (r (make-reader p "reader.sls")))
+           (let ((datum (read-datum r)))
+             (set-port-position! p pos0)
+             (let ((expect (read p)))
+               (test-equal expect datum)))))
+        (else
+         (display "Skipping test due to lack of port-position support\n"))))
 (test-end)
 
 (exit (if (zero? (test-runner-fail-count (test-runner-get))) 0 1))
