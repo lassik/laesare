@@ -3,5 +3,8 @@
 (import (akku format lockfile))
 (projects
   ((name "chez-srfi")
-    (location (git "https://github.com/arcfide/chez-srfi"))
-    (revision "2c3ed8818884b7c96de32360939bd43a0159b4a9")))
+    (location
+      (url "https://archive.akkuscm.org/archive/pkg/c/chez-srfi_0.0.0-akku.113.5cfad65_repack.tar.xz"))
+    (content
+      (sha256
+        "15913a009d7da1c82ea2dec088a24ac181c4b76b2931a04e217c2e26e387fbc1"))))
