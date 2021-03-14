@@ -1,0 +1,30 @@
+variables:
+  XDG_CACHE_HOME: "$CI_PROJECT_DIR/.cache"
+  AKKU_CACHE_DIR: "$CI_PROJECT_DIR/.cache/akku"
+
+cache:
+  key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
+  paths:
+    - .akku/src
+    - .cache/akku
+
+.job_template: &job_definition
+  stage: build
+  before_script:
+    - akku install
+  script:
+    - .akku/env ./run-tests.sh
+
+build:chezscheme: {<<: *job_definition, image: "akkuscm/akku:chezscheme"}
+build:digamma: {<<: *job_definition, image: "akkuscm/akku:digamma"}
+build:guile3: {<<: *job_definition, image: "akkuscm/akku:guile3"}
+build:guile: {<<: *job_definition, image: "akkuscm/akku:guile"}
+build:ikarus: {<<: *job_definition, image: "akkuscm/akku:ikarus"}
+build:ironscheme: {<<: *job_definition, image: "akkuscm/akku:ironscheme"}
+build:larceny: {<<: *job_definition, image: "akkuscm/akku:larceny"}
+build:loko: {<<: *job_definition, image: "akkuscm/akku:loko"}
+build:mosh: {<<: *job_definition, image: "akkuscm/akku:mosh"}
+build:racket: {<<: *job_definition, image: "akkuscm/akku:racket"}
+build:sagittarius: {<<: *job_definition, image: "akkuscm/akku:sagittarius"}
+build:vicare: {<<: *job_definition, image: "akkuscm/akku:vicare"}
+build:ypsilon: {<<: *job_definition, image: "akkuscm/akku:ypsilon"}
