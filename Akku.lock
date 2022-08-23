@@ -4,7 +4,7 @@
 (projects
   ((name "chez-srfi")
     (location
-      (url "https://archive.akkuscm.org/archive/pkg/c/chez-srfi_0.0.0-akku.113.5cfad65_repack.tar.xz"))
+      (url "https://archive.akkuscm.org/archive/pkg/c/chez-srfi_0.0.0-akku.209.552cd37_repack.tar.xz"))
     (content
       (sha256
-        "15913a009d7da1c82ea2dec088a24ac181c4b76b2931a04e217c2e26e387fbc1"))))
+        "f0f620f24a4765b85d3157b670e319d6cd30240bfc78f812af1f04cf6f8804e6"))))
