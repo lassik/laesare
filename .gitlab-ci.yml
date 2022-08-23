@@ -16,7 +16,6 @@ cache:
     - .akku/env ./run-tests.sh
 
 build:chezscheme: {<<: *job_definition, image: "akkuscm/akku:chezscheme"}
-build:digamma: {<<: *job_definition, image: "akkuscm/akku:digamma"}
 build:guile3: {<<: *job_definition, image: "akkuscm/akku:guile3"}
 build:guile: {<<: *job_definition, image: "akkuscm/akku:guile"}
 build:ikarus: {<<: *job_definition, image: "akkuscm/akku:ikarus"}
