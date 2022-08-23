@@ -233,7 +233,8 @@
              (eof-warning p)
              #\xFFFD)
             ((or (char<=? #\0 c #\9)
-                 (char-ci<=? #\a c #\f))
+                 (char<=? #\a c #\f)
+                 (char<=? #\A c #\F))
              (lp (cons c digits)))
             ((and (char=? c #\;) (pair? digits))
              (let ((sv (string->number (list->string (reverse digits)) 16)))
@@ -251,7 +252,8 @@
     (let ((c (lookahead-char p)))
       (cond
         ((and (char? c)
-              (or (char-ci<=? #\a c #\Z)
+              (or (char<=? #\a c #\z)
+                  (char<=? #\A c #\Z)
                   (char<=? #\0 c #\9)
                   (memv c '(#\! #\$ #\% #\& #\* #\/ #\: #\< #\= #\> #\? #\^ #\_ #\~
                             #\+ #\- #\. #\@))
@@ -588,7 +590,8 @@
                                ((char=? (car char*) #\x)
                                 (cond ((for-all (lambda (c)
                                                   (or (char<=? #\0 c #\9)
-                                                      (char-ci<=? #\a c #\f)))
+                                                      (char<=? #\a c #\f)
+                                                      (char<=? #\A c #\F)))
                                                 (cdr char*))
                                        (let ((sv (string->number (list->string (cdr char*)) 16)))
                                          (cond ((unicode-scalar-value? sv)
@@ -678,7 +681,7 @@
               (values 'identifier '...))
              (else
               (get-number p (list c)))))
-      ((or (char-ci<=? #\a c #\Z) ;<constituent> and <special initial>
+      ((or (char<=? #\a c #\z) (char<=? #\A c #\Z) ;<constituent> and <special initial>
            (memv c '(#\! #\$ #\% #\& #\* #\/ #\: #\< #\= #\> #\? #\^ #\_ #\~))
            (and (memv (reader-mode p) '(rnrs r7rs))
                 (or (eqv? c #\@) (memv c '(#\x200C #\x200D))))
