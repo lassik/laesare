@@ -25,7 +25,8 @@
   (rnrs (6))
   (srfi :64 testing)
   (laesare reader)
-  (laesare writer))
+  (laesare writer)
+  (laesare tests runner))
 
 (define (get-all mode input)
   (let ((reader (make-reader (open-string-input-port input) "<test>")))
@@ -146,4 +147,4 @@
              (get-file "reader.sls")))
 (test-end)
 
-(exit (if (zero? (test-runner-fail-count (test-runner-get))) 0 1))
+(test-exit)

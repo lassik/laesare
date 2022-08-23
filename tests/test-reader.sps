@@ -24,7 +24,8 @@
 (import
   (rnrs (6))
   (srfi :64 testing)
-  (laesare reader))
+  (laesare reader)
+  (laesare tests runner))
 
 (define-syntax check
   (lambda (x)
@@ -389,4 +390,4 @@
          (display "Skipping test due to lack of port-position support\n"))))
 (test-end)
 
-(exit (if (zero? (test-runner-fail-count (test-runner-get))) 0 1))
+(test-exit)
