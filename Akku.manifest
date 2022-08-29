@@ -1,7 +1,7 @@
 #!r6rs ; -*- mode: scheme; coding: utf-8 -*-
 (import (akku format manifest))
 
-(akku-package ("laesare" "1.0.0")
+(akku-package ("laesare" "1.0.1")
   (synopsis "Scheme lexer and reader")
   (description "This provides a reader with some extra features not
 found in the standard read procedure:"
