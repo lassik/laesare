@@ -139,7 +139,18 @@
          => '((label . 0) (openp . #f) (identifier . a) (whitespace . " ")
               (identifier . b) (whitespace . " ") (identifier . c)
               (whitespace . " ") (dot . #f) (whitespace . " ") (reference . 0)
-              (closep . #f))))
+              (closep . #f)))
+
+  ;; Mantissa width (tests commented out for now, they depend on
+  ;; string->number, which is not working in Guile 3.0.8)
+  ;; (check (get-all "(1.0|11)" 'r6rs)
+  ;;        => '((openp . #f) (value . 1.0) (closep . #f)))
+  ;; (check (get-all "(1.0|24)" 'r6rs)
+  ;;        => '((openp . #f) (value . 1.0) (closep . #f)))
+  ;; (check (get-all "(1.0|53)" 'r6rs)
+  ;;        => '((openp . #f) (value . 1.0) (closep . #f)))
+
+  )
 (test-end)
 
 (test-begin "tolerant-lexing")
