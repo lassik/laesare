@@ -22,8 +22,7 @@ build:ikarus: {<<: *job_definition, image: "akkuscm/akku:ikarus"}
 build:ironscheme: {<<: *job_definition, image: "akkuscm/akku:ironscheme"}
 build:larceny: {<<: *job_definition, image: "akkuscm/akku:larceny"}
 build:loko: {<<: *job_definition, image: "akkuscm/akku:loko"}
-# Temporarily commented out, fails because of chez-srfi maybe
-#build:mosh: {<<: *job_definition, image: "akkuscm/akku:mosh"}
+build:mosh: {<<: *job_definition, image: "akkuscm/akku:mosh"}
 build:racket: {<<: *job_definition, image: "akkuscm/akku:racket"}
 build:sagittarius: {<<: *job_definition, image: "akkuscm/akku:sagittarius"}
 build:vicare: {<<: *job_definition, image: "akkuscm/akku:vicare"}
