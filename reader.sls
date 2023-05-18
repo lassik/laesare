@@ -191,7 +191,8 @@
   (reader-warning reader "Unexpected EOF"))
 
 (define (unicode-scalar-value? sv)
-  (and (fx<=? 0 sv #x10FFFF)
+  (and (fixnum? sv)
+       (fx<=? 0 sv #x10FFFF)
        (not (fx<=? #xD800 sv #xDFFF))))
 
 (define (char-delimiter? reader c)

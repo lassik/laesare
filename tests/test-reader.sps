@@ -150,6 +150,9 @@
   ;; (check (get-all "(1.0|53)" 'r6rs)
   ;;        => '((openp . #f) (value . 1.0) (closep . #f)))
 
+  ;; Found with fuzzing
+  (check (get-all "#\\xF000000000000000") => '&lexical)
+
   )
 (test-end)
 
