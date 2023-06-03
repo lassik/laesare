@@ -266,11 +266,30 @@
             (let ((reader (make-reader (open-string-input-port input) "<test>")))
               (reader-mode-set! reader mode)
               (guard (con
+                      ((unreadable-error? con)
+                       (let ((obj (unreadable-error-object con)))
+                         (if obj
+                             `(&unreadable ,(unreadable-object-stand-in obj))
+                             '&unreadable)))
                       (else
                        ;; (display (condition-message con)) (newline)
                        ;; (write (condition-irritants con)) (newline)
                        'error))
-                (read-datum reader))))))
+                (read-datum reader)))))
+
+         (equal-unreadable?
+          (lambda (a b)
+            (or (equal? a b)
+                (and (unreadable-object? a)
+                     (unreadable-object? b)
+                     (equal-unreadable?
+                      (unreadable-object-stand-in a)
+                      (unreadable-object-stand-in b)))
+                (and (pair? a)
+                     (pair? b)
+                     (equal-unreadable? (car a) (car b))
+                     (equal-unreadable? (cdr a) (cdr b)))))))
+
   ;; Booleans
   (test-equal #f (stripped-read 'rnrs "#!false"))
   (test-equal #t (stripped-read 'rnrs "#!true"))
@@ -320,6 +339,22 @@
   (test-equal 0 (stripped-read 'r7rs "+0"))
   ;; (test-equal 'error (stripped-read 'r7rs "+."))
   (test-equal 0.0 (stripped-read 'r7rs "+.0"))
+
+  ;; Unreadable data
+  (test-equal '&unreadable
+              (stripped-read 'rnrs "#<"))
+  (test-equal '&unreadable
+              (stripped-read 'rnrs "#<procedure append>"))
+  (test-equal 'error
+              (stripped-read 'rnrs "#?"))
+  (test-equal '(&unreadable #f)
+              (stripped-read 'rnrs "#?#f"))
+  (test-equal '(&unreadable (a b c))
+              (stripped-read 'rnrs "#?(a b c)"))
+  (test-assert (equal-unreadable?
+                `(&unreadable (a ,(unreadable-object 'b)))
+                (stripped-read 'rnrs "#?(a #?b)")))
+
   )
 (test-end)
 

@@ -40,7 +40,13 @@
     reader-saved-line reader-saved-column
     annotation? annotation-expression annotation-stripped annotation-source
     annotation-source->condition source-condition? source-filename
-    source-line source-column)
+    source-line source-column
+    unreadable-object?
+    unreadable-object
+    unreadable-object-stand-in
+    make-unreadable-error
+    unreadable-error?
+    unreadable-error-object)
   (import
     (rnrs arithmetic fixnums (6))
     (rnrs base (6))
@@ -156,7 +162,9 @@
     (let*-values (((type x) (get-lexeme reader))
                   ((d _) (handle-lexeme reader type x labels #f)))
       (resolve-labels reader labels)
-      d)))
+      (if (unreadable-object? d)
+          (raise-unreadable-object reader d)
+          d))))
 
 ;;; Lexeme reader
 
@@ -456,6 +464,36 @@
         (get-lexeme p)
         (values type lexeme))))
 
+(define-record-type (<unreadable-object>
+                     unreadable-object
+                     unreadable-object?)
+  (fields (immutable stand-in unreadable-object-stand-in))
+  (sealed #t) (opaque #f)
+  (nongenerative unreadable-object-v0-eec5b78f-a766-4be4-9cd0-fbb52ec572dc))
+
+(define-condition-type &unreadable &lexical
+  make-unreadable-error
+  unreadable-error?
+  (object unreadable-error-object))
+
+(define (m-s-c reader)
+  (make-source-condition
+   (reader-filename reader)
+   (reader-saved-line reader)
+   (reader-saved-column reader)))
+
+(define (raise-unreadable-data reader)
+  (raise
+   (condition
+    (make-unreadable-error #f)
+    (m-s-c reader))))
+
+(define (raise-unreadable-object reader uro)
+  (raise
+   (condition
+    (make-unreadable-error uro)
+    (m-s-c reader))))
+
 ;; Get the next token. Can be a lexeme, directive, whitespace or comment.
 (define (get-token p)
   (assert (reader? p))
@@ -635,6 +673,10 @@
                        (values 'value #\xFFFD))
                       (else
                        (lp (cons (get-char p) char*)))))))
+           ((#\<)
+            (raise-unreadable-data p))
+           ((#\?)
+            (values 'abbrev 'unreadable-object))
            ((#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)
             (assert-mode p "#<n>=<datum> and #<n>#" '(rnrs r7rs))
             (let lp ((char* (list c)))
@@ -840,7 +882,9 @@
                 (values lex lex))
                (else
                 (let-values (((d d^) (handle-lexeme p type lex labels #t)))
-                  (let ((s (list x d)))
+                  (let ((s (if (eqv? 'unreadable-object x)
+                               (unreadable-object d)
+                               (list x d))))
                     (values s (annotate src s (list x d^)))))))))
       ((label)
        ;; The object that follows this label can be referred
