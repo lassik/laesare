@@ -512,10 +512,9 @@
             (values 'nested-comment (get-nested-comment p)))
            ((#\!)                     ;#!r6rs etc
             (let ((next-char (lookahead-char p)))
-              (cond ((and (= (reader-saved-line p) 1) (memv next-char '(#\/ #\space)))
-                     (let ((line (reader-saved-line p))
-                           (column (reader-saved-column p)))
-                       (values 'shebang `(,line ,column ,(get-line p)))))
+              (cond ((and (= (reader-saved-line p) 1)
+                          (char-whitespace? next-char))
+                     (values 'line-directive #f))
                     ((and (char? next-char) (char-alphabetic? next-char))
                      (let-values (((type id) (get-token p)))
                        (cond
@@ -818,6 +817,16 @@
 (define (handle-lexeme p lextype x labels allow-refs?)
   (let ((src (reader-source p)))
     (case lextype
+      ((line-directive)
+       (let ((orig-line (reader-saved-line p))
+             (org-column (reader-saved-column p)))
+         (let loop ((acc '()))
+           (get-whitespace p next-char)
+           (let ((form (read)))
+
+                      `(,line ,column ,(get-line p)))))
+
+       )
       ((openp)
        (get-compound-datum p src 'closep 'list labels))
       ((openb)

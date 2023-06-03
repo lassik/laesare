@@ -384,4 +384,20 @@
       (test-equal expect datum))))
 (test-end)
 
+;; Line directives
+(test-begin "line-directives")
+(letrec ((stripped-read
+          (lambda (input)
+            (let ((reader (make-reader (open-string-input-port input) "<test>")))
+              (reader-mode-set! reader 'r7rs)
+              (guard (con
+                      (else
+                       ;; (display (condition-message con)) (newline)
+                       ;; (write (condition-irritants con)) (newline)
+                       'error))
+                (read-datum reader))))))
+  (test-equal '(line-directive foo bar)
+    (stripped-read "#! foo bar")))
+(test-end)
+
 (exit (if (zero? (test-runner-fail-count (test-runner-get))) 0 1))
